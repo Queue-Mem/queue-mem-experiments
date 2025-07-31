@@ -1931,15 +1931,17 @@ def plot_power_consumption_mpps_figure(results_path):
     plt.savefig(os.path.join(figures_path, "pipeline_consumption_bars.pdf"), format="pdf", bbox_inches='tight')
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: plot.py <results_path> <figures_path>")
+    if len(sys.argv) < 4:
+        print("Usage: plot.py <results_path> <figures_path> <mcast>")
         exit(1)
 
     results_path = os.path.abspath(sys.argv[1])
     figures_path = os.path.abspath(sys.argv[2])
+    mcast = sys.argv[3]
 
     print(f"Results Path: {results_path}")
     print(f"Figures Path: {figures_path}")
+    print(f"Multicast: {mcast}")
 
     os.makedirs(figures_path, exist_ok=True)
 
@@ -1955,20 +1957,20 @@ if __name__ == "__main__":
         ["Queue-Mem (Header-only)", "Baseline (Header+Payload)", "PayloadPark-like"]
     )
 
-    plot_variable_throughput_figure(os.path.join(results_path, "incremental/{name}/14"), 60, 10, 4, 5, 0, "incremental_throughput.pdf", True, True, True)
-    plot_variable_throughput_figure(os.path.join(results_path, "incremental_drops/{name}/14"), 60, 10, 4, 5, 0, "incremental_drops_throughput.pdf", False, False, True)
+    plot_variable_throughput_figure(os.path.join(results_path, "incremental/{name}/" + mcast), 60, 10, 4, 5, 0, "incremental_throughput.pdf", True, True, True)
+    plot_variable_throughput_figure(os.path.join(results_path, "incremental_drops/{name}/" + mcast), 60, 10, 4, 5, 0, "incremental_drops_throughput.pdf", False, False, True)
 
-    plot_variable_throughput_figure(os.path.join(results_path, "random/{name}/14"), 34, 4, 4, 5, 0, "random_throughput.pdf", True, True, False)
-    plot_variable_throughput_figure(os.path.join(results_path, "random_drops/{name}/14"), 34, 4, 4, 5, 0, "random_drops_throughput.pdf", False, False, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "random/{name}/" + mcast), 34, 4, 4, 5, 0, "random_throughput.pdf", True, True, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "random_drops/{name}/" + mcast), 34, 4, 4, 5, 0, "random_drops_throughput.pdf", False, False, False)
     
-    plot_variable_throughput_figure(os.path.join(results_path, "peak/{name}/14"), 34, 4, 4, 5, 0, "peak_throughput.pdf", True, True, False)
-    plot_variable_throughput_figure(os.path.join(results_path, "peak_drops/{name}/14"), 34, 4, 4, 5, 0, "peak_drops_throughput.pdf", False, False, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "peak/{name}/" + mcast), 34, 4, 4, 5, 0, "peak_throughput.pdf", True, True, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "peak_drops/{name}/" + mcast), 34, 4, 4, 5, 0, "peak_drops_throughput.pdf", False, False, False)
     
-    plot_variable_throughput_figure(os.path.join(results_path, "caida/{name}/14"), 6, 2, 1, 2, 4, "caida_throughput.pdf", True, True, False)
-    plot_variable_throughput_figure(os.path.join(results_path, "caida_drops/{name}/14"), 6, 2, 2, 0, 0, "caida_drops_throughput.pdf", False, False, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "caida/{name}/" + mcast), 6, 2, 1, 2, 4, "caida_throughput.pdf", True, True, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "caida_drops/{name}/" + mcast), 6, 2, 2, 0, 0, "caida_drops_throughput.pdf", False, False, False)
     
-    plot_variable_throughput_figure(os.path.join(results_path, "mawi/{name}/14"), 6, 2, 1, 2, 3, "mawi_throughput.pdf", True, True, True)
-    plot_variable_throughput_figure(os.path.join(results_path, "mawi_drops/{name}/14"), 6, 2, 2, 0, 0, "mawi_drops_throughput.pdf", False, False, False)
+    plot_variable_throughput_figure(os.path.join(results_path, "mawi/{name}/" + mcast), 6, 2, 1, 2, 3, "mawi_throughput.pdf", True, True, True)
+    plot_variable_throughput_figure(os.path.join(results_path, "mawi_drops/{name}/" + mcast), 6, 2, 2, 0, 0, "mawi_drops_throughput.pdf", False, False, False)
     
     plt.figure(figsize=(3, 1.3))
     plot_throughput_gbps_figure_nf(
@@ -1977,15 +1979,15 @@ if __name__ == "__main__":
     )
 
     plt.figure(figsize=(3, 1.3))
-    plot_nf_drops_figure(os.path.join(results_path, "drops/14"), 'NF Header Drops [%]', [0, 10, 20, 30, 40, 50], [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6], "drops_nf.pdf")
+    plot_nf_drops_figure(os.path.join(results_path, "drops/" + mcast), 'NF Header Drops [%]', [0, 10, 20, 30, 40, 50], [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6], "drops_nf.pdf")
 
     plt.figure(figsize=(3, 1.3))
-    plot_nf_drops_figure(os.path.join(results_path, "tail_drops/14"), 'Batches w/ Drops [%]', range(0, 110, 20), [0.8, 1.0, 1.2, 1.4, 1.6], "tail_drops_nf.pdf")
+    plot_nf_drops_figure(os.path.join(results_path, "tail_drops/" + mcast), 'Batches w/ Drops [%]', range(0, 110, 20), [0.8, 1.0, 1.2, 1.4, 1.6], "tail_drops_nf.pdf")
 
-    plot_bg_throughput_figure(os.path.join(results_path, "bg_traffic_iperf_tp/14"), 6, 6, "bg_throughput.pdf")
+    plot_bg_throughput_figure(os.path.join(results_path, "bg_traffic_iperf_tp/" + mcast), 6, 6, "bg_throughput.pdf")
 
     plt.figure(figsize=(3, 1.3))
-    plot_bg_latency_figure(os.path.join(results_path, "bg_traffic_lat/14"), 7)
+    plot_bg_latency_figure(os.path.join(results_path, "bg_traffic_lat/" + mcast), 7)
  
     plt.figure(figsize=(3, 1.3))
     plot_reordering_slf_figure(os.path.join(results_path, "reordering"))

@@ -2,7 +2,7 @@
 
 source set_env.bash
 
-while getopts p:m:t:n:d: flag
+while getopts p:m:t:n:d:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
@@ -10,10 +10,11 @@ do
         t) target=${OPTARG};;
         n) name=${OPTARG};;
         d) drops=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$target" ] || [ -z "$name" ] || [ -z "$drops" ]; then
+if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$target" ] || [ -z "$name" ] || [ -z "$drops" ] || [ -r "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -75,7 +76,7 @@ else
 fi
 
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - Trace ${TRACE_FILE} ${mcast}x100Gbps ~ Start Run ${i}" >> log.txt
 

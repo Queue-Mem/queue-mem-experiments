@@ -2,16 +2,17 @@
 
 source set_env.bash
 
-while getopts p:t:n: flag
+while getopts p:t:n:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
         t) profile=${OPTARG};;
         n) nf=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$profile" ] || [ -z "$nf" ]; then
+if [ -z "$path" ] || [ -z "$profile" ] || [ -z "$nf" ] || [ -z "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -40,7 +41,7 @@ echo "Setting queues_per_slice = 12" >> log.txt
 sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$QUEUEMEM_TOFINO_NAME "sed -i 's/queues_per_slice = .*/queues_per_slice = 12/g' $QUEUEMEM_PATH/setup.py"
 
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - trex ~ Start Run ${i}" >> log.txt
 

@@ -2,17 +2,18 @@
 
 source set_env.bash
 
-while getopts p:m:s:c: flag
+while getopts p:m:s:c:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
         m) mcast=${OPTARG};;
         s) slf=${OPTARG};;
         c) cons_flows=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$slf" ] || [ -z "$cons_flows" ]; then
+if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$slf" ] || [ -z "$cons_flows" ] || [ -r "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -54,7 +55,7 @@ echo "Setting queues_per_slice = 2" >> log.txt
 sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$QUEUEMEM_TOFINO_NAME "sed -i 's/queues_per_slice = .*/queues_per_slice = 2/g' $QUEUEMEM_PATH/setup.py"
 
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - Reordering ${mcast}x100Gbps ~ Start Run ${i}" >> log.txt
 

@@ -2,15 +2,16 @@
 
 source set_env.bash
 
-while getopts p:m: flag
+while getopts p:m:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
         m) mcast=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$mcast" ]; then
+if [ -z "$path" ] || [ -z "$mcast" ] || [ -r "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -19,6 +20,7 @@ echo "$(date +'%m-%d-%y-%T') - Starting experiments with the following parameter
 
 echo "  Output Directory: $path" >> log.txt
 echo "  Number Of Multicast: $mcast" >> log.txt
+echo "  Number Of Runs: $runs" >> log.txt
 
 echo "$(date +'%m-%d-%y-%T') - Deleting logs from $QUEUEMEM_TOFINO_NAME..." >> log.txt
 sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$QUEUEMEM_TOFINO_NAME "sudo rm -rf $QUEUEMEM_PATH/logs/*"
@@ -35,8 +37,13 @@ sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$MCAST_TOFINO_NAME "mv $MULTIC
 echo "Setting MAX_RATE=True" >> log.txt
 sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$MCAST_TOFINO_NAME "sed -i 's/MAX_RATE = False/MAX_RATE = True/g' $MULTICAST_PATH/setup_bq_forwarder.py"
 
+echo "Setting DEFAULT_N_PAYLOADS=30" >> log.txt
+sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$QUEUEMEM_TOFINO_NAME "sed -i 's/DEFAULT_N_PAYLOADS = .*/DEFAULT_N_PAYLOADS = 30/g' $QUEUEMEM_PATH/setup.py"
+echo "Setting queues_per_slice = 8" >> log.txt
+sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$QUEUEMEM_TOFINO_NAME "sed -i 's/queues_per_slice = .*/queues_per_slice = 8/g' $QUEUEMEM_PATH/setup.py"
+
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - Throughput ${mcast}x100Gbps ~ Start Run ${i}" >> log.txt
 

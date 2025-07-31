@@ -2,17 +2,18 @@
 
 source set_env.bash
 
-while getopts p:m:n:l:f: flag
+while getopts p:m:n:l:f:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
         m) mcast=${OPTARG};;
         n) name=${OPTARG};;
         f) nf=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$name" ] || [ -z "$nf" ]; then
+if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$name" ] || [ -z "$nf" ] || [ -z "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -61,7 +62,7 @@ sshpass -p $TOFINO_USER_PASS ssh $TOFINO_USERNAME@$QUEUEMEM_TOFINO_NAME "sed -i 
 
 
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - BG Traffic Latency ${mcast}x100Gbps ~ Start Run ${i}" >> log.txt
 

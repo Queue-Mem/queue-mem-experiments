@@ -2,17 +2,18 @@
 
 source set_env.bash
 
-while getopts p:m:t:d: flag
+while getopts p:m:t:d:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
         m) mcast=${OPTARG};;
         t) target=${OPTARG};;
         d) drops=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$target" ] || [ -z "$drops" ]; then
+if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$target" ] || [ -z "$drops" ] || [ -r "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -62,7 +63,7 @@ else
 fi
 
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - Variable Throughput ${mcast}x100Gbps ~ Start Run ${i}" >> log.txt
 

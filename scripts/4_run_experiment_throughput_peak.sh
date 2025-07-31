@@ -2,17 +2,18 @@
 
 source set_env.bash
 
-while getopts p:m:t:d: flag
+while getopts p:m:t:d:r: flag
 do
     case "${flag}" in
         p) path=${OPTARG};;
         m) mcast=${OPTARG};;
         t) target=${OPTARG};;
         d) drops=${OPTARG};;
+        r) runs=${OPTARG};;
     esac
 done
 
-if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$target" ] || [ -z "$drops" ]; then
+if [ -z "$path" ] || [ -z "$mcast" ] || [ -z "$target" ] || [ -z "$drops" ] || [ -r "$runs" ]; then
         echo 'You missed some parameters' >&2
         exit 1
 fi
@@ -23,6 +24,7 @@ echo "  Output Directory: $path" >> log.txt
 echo "  Number Of Multicast: $mcast" >> log.txt
 echo "  Tofino2 Program: $target" >> log.txt
 echo "  Drops: 1/$drops" >> log.txt
+echo "  Number Of Runs: $runs" >> log.txt
 
 if [[ "$target" == "queuemem" ]]
 then
@@ -62,7 +64,7 @@ else
 fi
 
 sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10
+for ((i=1; i<=runs; i++))
 do
     echo "$(date +'%m-%d-%y-%T') - Peak Throughput ${mcast}x100Gbps ~ Start Run ${i}" >> log.txt
 

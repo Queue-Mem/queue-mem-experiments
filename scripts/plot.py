@@ -1678,19 +1678,16 @@ def plot_power_consumption_mpps_figure(results_path):
         for row in reader:
             data['rdma'].append(float(row['usage']))
 
-    avg_nf1K_consumption = statistics.mean(data['nf1K'])
-    avg_nf64B_consumption = statistics.mean(data['nf64B'])
-    avg_rnic_consumption = statistics.mean(data['rdma'])
+    
+    avg_rnic_consumption = 24.9
 
     asic_base_consumption = 108
     additional_asic_consumption_per_gbps = 0.026
     additional_asic_consumption_per_mpps = additional_asic_consumption_per_gbps / ((1_000_000_000 / (1500 * 8)) / 1_000_000)
 
-    cpu_base_consumption = statistics.mean(data['idle'])
-    additional_rnic_consumption_per_gbps = (avg_rnic_consumption - cpu_base_consumption) / 100
-    additional_rnic_consumption_1K_per_mpps = additional_rnic_consumption_per_gbps / ((1_000_000_000 / (1500 * 8)) / 1_000_000)
-    additional_rnic_consumption_64B_per_mpps = additional_rnic_consumption_per_gbps / ((1_000_000_000 / (64 * 8)) / 1_000_000)
-
+    cpu_base_consumption = statistics.mean(data['idle']) - avg_rnic_consumption
+    avg_nf1K_consumption = statistics.mean(data['nf1K']) - avg_rnic_consumption
+    avg_nf64B_consumption = statistics.mean(data['nf64B']) - avg_rnic_consumption
 
     additional_nf1K_consumption_per_gbps = (avg_nf1K_consumption - avg_rnic_consumption) / 100
     additional_nf1K_consumption_per_mpps = additional_nf1K_consumption_per_gbps / ((1_000_000_000 / (1500 * 8)) / 1_000_000)
@@ -1711,7 +1708,7 @@ def plot_power_consumption_mpps_figure(results_path):
             m = i + 1
 
             asic_power = asic_base_consumption + (additional_asic_consumption_per_mpps * ((m + 1) * mpps_per_100gbps))
-            server_power = cpu_base_consumption + ((additional_rnic_consumption_64B_per_mpps + additional_nf64B_consumption_per_mpps) * input_mpps)
+            server_power = cpu_base_consumption + ((additional_nf64B_consumption_per_mpps) * input_mpps) + avg_rnic_consumption
             queuemem_power = asic_power + server_power
 
             to_plot['x'].append(pps / 1_000_000)
@@ -1732,8 +1729,8 @@ def plot_power_consumption_mpps_figure(results_path):
             rdma_servers = round((100 * m) / 75)
 
             asic_power = asic_base_consumption + (additional_asic_consumption_per_mpps * ((m + rdma_servers + 1) * mpps_per_100gbps))
-            server_power = cpu_base_consumption + ((additional_rnic_consumption_64B_per_mpps + additional_nf64B_consumption_per_mpps) * input_mpps)
-            rdma_power = (cpu_base_consumption/2) + (additional_rnic_consumption_1K_per_mpps * (mpps_per_100gbps * 0.75))
+            server_power = cpu_base_consumption + ((additional_nf64B_consumption_per_mpps) * input_mpps) + avg_rnic_consumption
+            rdma_power = (cpu_base_consumption/2) + avg_rnic_consumption
             ribosome_power = asic_power + server_power + (rdma_power * rdma_servers)
 
             to_plot['x'].append(pps / 1_000_000)
@@ -1754,7 +1751,7 @@ def plot_power_consumption_mpps_figure(results_path):
 
             # input_mpps*2 because you need a NF port for each input port (m)
             asic_power = asic_base_consumption + (additional_asic_consumption_per_mpps * (input_mpps * 2))
-            server_power = cpu_base_consumption + (additional_rnic_consumption_1K_per_mpps + additional_nf1K_consumption_per_mpps) * mpps_per_100gbps
+            server_power = cpu_base_consumption + ((additional_nf1K_consumption_per_mpps) * mpps_per_100gbps) + avg_rnic_consumption
             baseline_power = asic_power + (server_power * m)
 
             to_plot['x'].append(pps / 1000000)
@@ -1779,7 +1776,7 @@ def plot_power_consumption_mpps_figure(results_path):
 
             # input_mpps*2 because you need a NF port for each input port (m)
             asic_power = asic_base_consumption + (additional_asic_consumption_per_mpps * (input_mpps * 2))
-            server_power = cpu_base_consumption + (additional_rnic_consumption_1K_per_mpps * pps_per_server) + (additional_nf64B_consumption_per_mpps * pps_per_server)
+            server_power = cpu_base_consumption + (avg_rnic_consumption * n_nic) + (additional_nf64B_consumption_per_mpps * pps_per_server)
             nicmem_power = asic_power + (server_power * nf_servers)
 
             to_plot['x'].append(pps / 1000000)
@@ -1802,7 +1799,7 @@ def plot_power_consumption_mpps_figure(results_path):
             nf_servers = math.ceil((mpps_per_100gbps * m) / mpps_payloadpark)
 
             asic_power = asic_base_consumption + (additional_asic_consumption_per_mpps * (input_mpps * 2))
-            server_power = cpu_base_consumption + (additional_rnic_consumption_1K_per_mpps + additional_nf1K_consumption_per_mpps) * mpps_payloadpark
+            server_power = cpu_base_consumption + ((additional_nf1K_consumption_per_mpps) * mpps_payloadpark) + avg_rnic_consumption
             payloadpark_power = asic_power + (server_power * nf_servers)
 
             to_plot['x'].append(pps / 1000000)
@@ -1824,7 +1821,7 @@ def plot_power_consumption_mpps_figure(results_path):
 
             # m input ports + m FPGA ports + 1 CPU socket    
             asic_power = asic_base_consumption + (additional_asic_consumption_per_mpps * (input_mpps + (input_mpps*(1-slow_path_load)) + (input_mpps * slow_path_load)))
-            server_power = cpu_base_consumption + ((additional_rnic_consumption_1K_per_mpps + additional_nf1K_consumption_per_mpps) * (input_mpps * slow_path_load))
+            server_power = cpu_base_consumption + ((additional_nf1K_consumption_per_mpps) * (input_mpps * slow_path_load)) + avg_rnic_consumption
             fpga_power = fpga_base_consumption_per_mpps * (mpps_per_100gbps*(1-slow_path_load))
             tiara_power = asic_power + server_power + (fpga_power * m)
 
@@ -1876,18 +1873,18 @@ def plot_power_consumption_mpps_figure(results_path):
     plt.yticks([0.1, 1, 10])
 
     ax.annotate("", xy=(83.5, nicmem_watt), xytext=(83.5, queuemem_watt),
-                arrowprops=dict(arrowstyle="<->", color="orange"))
-    plt.text(80, 0.6, f'{(nicmem_watt / queuemem_watt):.1f}x', ha='center', va='bottom',
+                arrowprops=dict(arrowstyle="<->", color="orange", mutation_scale=6))
+    plt.text(80, 0.58, f'{(nicmem_watt / queuemem_watt):.1f}x', ha='center', va='bottom',
              fontdict={'color': 'orange', 'size': 8})
 
     ax.annotate("", xy=(91, tiara_watt), xytext=(91, queuemem_watt),
-                arrowprops=dict(arrowstyle="<->", color="purple"))
-    plt.text(87.5, 0.6, f'{(tiara_watt / queuemem_watt):.1f}x', ha='center', va='bottom',
+                arrowprops=dict(arrowstyle="<->", color="purple", mutation_scale=6))
+    plt.text(87.5, 0.58, f'{(tiara_watt / queuemem_watt):.1f}x', ha='center', va='bottom',
              fontdict={'color': 'purple', 'size': 8})
 
     ax.annotate("", xy=(98.5, ribosome_watt), xytext=(98.5, queuemem_watt),
-                arrowprops=dict(arrowstyle="<->", color="blue"))
-    plt.text(95, 0.6, f'{(ribosome_watt / queuemem_watt):.1f}x', ha='center', va='bottom',
+                arrowprops=dict(arrowstyle="<->", color="blue", mutation_scale=6))
+    plt.text(95, 0.58, f'{(ribosome_watt / queuemem_watt):.1f}x', ha='center', va='bottom',
              fontdict={'color': 'blue', 'size': 8})
 
     plt.xlabel('Input Throughput [Mpps]')
@@ -1923,7 +1920,7 @@ def plot_power_consumption_mpps_figure(results_path):
     ax = plt.gca()
     ax.set_axisbelow(True)
 
-    plt.yticks([0, 1, 2, 3, 4, 5, 6])
+    plt.yticks([0, 1, 2, 3, 4, 5, 6, 7])
     ax.xaxis.set_tick_params(labelsize=7.5)
 
     plt.xlabel('Location', fontdict={'linespacing': 1.7})
@@ -1951,49 +1948,49 @@ if __name__ == "__main__":
 
     plot_power_consumption_mpps_figure(os.path.abspath("power_measurements_cx7"))
 
-    plt.figure(figsize=(3, 1.3))
-    plot_throughput_gbps_figure(
-        os.path.join(results_path, "throughput"), "forwarder_throughput.pdf",
-        ["Queue-Mem (Header-only)", "Baseline (Header+Payload)", "PayloadPark-like"]
-    )
+    # plt.figure(figsize=(3, 1.3))
+    # plot_throughput_gbps_figure(
+    #     os.path.join(results_path, "throughput"), "forwarder_throughput.pdf",
+    #     ["Queue-Mem (Header-only)", "Baseline (Header+Payload)", "PayloadPark-like"]
+    # )
 
-    plot_variable_throughput_figure(os.path.join(results_path, "incremental/{name}/" + mcast), 60, 10, 4, 5, 0, "incremental_throughput.pdf", True, True, True)
-    plot_variable_throughput_figure(os.path.join(results_path, "incremental_drops/{name}/" + mcast), 60, 10, 4, 5, 0, "incremental_drops_throughput.pdf", False, False, True)
+    # plot_variable_throughput_figure(os.path.join(results_path, "incremental/{name}/" + mcast), 60, 10, 4, 5, 0, "incremental_throughput.pdf", True, True, True)
+    # plot_variable_throughput_figure(os.path.join(results_path, "incremental_drops/{name}/" + mcast), 60, 10, 4, 5, 0, "incremental_drops_throughput.pdf", False, False, True)
 
-    plot_variable_throughput_figure(os.path.join(results_path, "random/{name}/" + mcast), 34, 4, 4, 5, 0, "random_throughput.pdf", True, True, False)
-    plot_variable_throughput_figure(os.path.join(results_path, "random_drops/{name}/" + mcast), 34, 4, 4, 5, 0, "random_drops_throughput.pdf", False, False, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "random/{name}/" + mcast), 34, 4, 4, 5, 0, "random_throughput.pdf", True, True, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "random_drops/{name}/" + mcast), 34, 4, 4, 5, 0, "random_drops_throughput.pdf", False, False, False)
     
-    plot_variable_throughput_figure(os.path.join(results_path, "peak/{name}/" + mcast), 34, 4, 4, 5, 0, "peak_throughput.pdf", True, True, False)
-    plot_variable_throughput_figure(os.path.join(results_path, "peak_drops/{name}/" + mcast), 34, 4, 4, 5, 0, "peak_drops_throughput.pdf", False, False, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "peak/{name}/" + mcast), 34, 4, 4, 5, 0, "peak_throughput.pdf", True, True, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "peak_drops/{name}/" + mcast), 34, 4, 4, 5, 0, "peak_drops_throughput.pdf", False, False, False)
     
-    plot_variable_throughput_figure(os.path.join(results_path, "caida/{name}/" + mcast), 6, 2, 1, 2, 4, "caida_throughput.pdf", True, True, False)
-    plot_variable_throughput_figure(os.path.join(results_path, "caida_drops/{name}/" + mcast), 6, 2, 2, 0, 0, "caida_drops_throughput.pdf", False, False, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "caida/{name}/" + mcast), 6, 2, 1, 2, 4, "caida_throughput.pdf", True, True, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "caida_drops/{name}/" + mcast), 6, 2, 2, 0, 0, "caida_drops_throughput.pdf", False, False, False)
     
-    plot_variable_throughput_figure(os.path.join(results_path, "mawi/{name}/" + mcast), 6, 2, 1, 2, 3, "mawi_throughput.pdf", True, True, True)
-    plot_variable_throughput_figure(os.path.join(results_path, "mawi_drops/{name}/" + mcast), 6, 2, 2, 0, 0, "mawi_drops_throughput.pdf", False, False, False)
+    # plot_variable_throughput_figure(os.path.join(results_path, "mawi/{name}/" + mcast), 6, 2, 1, 2, 3, "mawi_throughput.pdf", True, True, True)
+    # plot_variable_throughput_figure(os.path.join(results_path, "mawi_drops/{name}/" + mcast), 6, 2, 2, 0, 0, "mawi_drops_throughput.pdf", False, False, False)
     
-    plt.figure(figsize=(3, 1.3))
-    plot_throughput_gbps_figure_nf(
-        os.path.join(results_path, "throughput_nf"), "throughput_NF.pdf",
-        ["FC+LB+RL", "LB+AES"]
-    )
+    # plt.figure(figsize=(3, 1.3))
+    # plot_throughput_gbps_figure_nf(
+    #     os.path.join(results_path, "throughput_nf"), "throughput_NF.pdf",
+    #     ["FC+LB+RL", "LB+AES"]
+    # )
 
-    plt.figure(figsize=(3, 1.3))
-    plot_nf_drops_figure(os.path.join(results_path, "drops/" + mcast), 'NF Header Drops [%]', [0, 10, 20, 30, 40, 50], [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6], "drops_nf.pdf")
+    # plt.figure(figsize=(3, 1.3))
+    # plot_nf_drops_figure(os.path.join(results_path, "drops/" + mcast), 'NF Header Drops [%]', [0, 10, 20, 30, 40, 50], [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6], "drops_nf.pdf")
 
-    plt.figure(figsize=(3, 1.3))
-    plot_nf_drops_figure(os.path.join(results_path, "tail_drops/" + mcast), 'Batches w/ Drops [%]', range(0, 110, 20), [0.8, 1.0, 1.2, 1.4, 1.6], "tail_drops_nf.pdf")
+    # plt.figure(figsize=(3, 1.3))
+    # plot_nf_drops_figure(os.path.join(results_path, "tail_drops/" + mcast), 'Batches w/ Drops [%]', range(0, 110, 20), [0.8, 1.0, 1.2, 1.4, 1.6], "tail_drops_nf.pdf")
 
-    plot_bg_throughput_figure(os.path.join(results_path, "bg_traffic_iperf_tp/" + mcast), 6, 6, "bg_throughput.pdf")
+    # plot_bg_throughput_figure(os.path.join(results_path, "bg_traffic_iperf_tp/" + mcast), 6, 6, "bg_throughput.pdf")
 
-    plt.figure(figsize=(3, 1.3))
-    plot_bg_latency_figure(os.path.join(results_path, "bg_traffic_lat/" + mcast), 7)
+    # plt.figure(figsize=(3, 1.3))
+    # plot_bg_latency_figure(os.path.join(results_path, "bg_traffic_lat/" + mcast), 7)
  
-    plt.figure(figsize=(3, 1.3))
-    plot_reordering_slf_figure(os.path.join(results_path, "reordering"))
+    # plt.figure(figsize=(3, 1.3))
+    # plot_reordering_slf_figure(os.path.join(results_path, "reordering"))
 
-    plt.figure(figsize=(3, 1.3))
-    plot_iperf_full_figure(os.path.join(results_path, "iperf_all"))
+    # plt.figure(figsize=(3, 1.3))
+    # plot_iperf_full_figure(os.path.join(results_path, "iperf_all"))
 
-    plt.figure(figsize=(3, 1.3))
-    plot_trex_figure(os.path.join(results_path, "trex"), 5)
+    # plt.figure(figsize=(3, 1.3))
+    # plot_trex_figure(os.path.join(results_path, "trex"), 5)
